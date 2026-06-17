@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <title>Student Learning Hub Admin</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+  <style>
+    :root { --primary: #4f46e5; --primary-hover: #4338ca; --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --text-secondary: #475569; --border: #e2e8f0; --success: #10b981; --warning: #f59e0b; --error: #ef4444; }
+    body, button, input, select, textarea { font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; }
+    .app-container { display: flex; flex-direction: column; min-height: 100vh; }
+    header { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
+    .brand h1 { margin: 0; font-size: 1.5rem; color: var(--primary); font-weight: 700; }
+    .brand p { margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-secondary); }
+    .controls-bar { background: #ffffff; border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; gap: 20px; align-items: center; }
+    select { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem; }
+    .tabs { display: flex; gap: 8px; margin-left: auto; }
+    .tab-btn { padding: 8px 16px; border: none; background: none; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s ease; }
+    .tab-btn:hover { color: var(--primary); background: #eef2ff; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    main { flex: 1; padding: 32px; max-width: 1400px; width: calc(100% - 64px); margin: 0 auto; }
+    .view-panel { display: none; }
+    .view-panel.active { display: block; }
+    
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    .grid-sidebar { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .list-item { padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.15s ease; }
+    .list-item:hover { border-color: var(--primary); background: #eef2ff; }
+    .list-item.selected { background: var(--primary); color: white; border-color: var(--primary); }
+    .badge-neutral { background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; border: 1px solid #cbd5e1; }
+    
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+    th { background: #f8fafc; padding: 12px; border-bottom: 1px solid var(--border); }
+    td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .misconception-tag { background: #fff7ed; border: 1px solid #ffedd5; color: #c2410c; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 6px; display: inline-block; margin-right: 6px; font-weight: 600; }
+    .student-tag { background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; display: inline-block; margin-bottom: 4px; margin-right: 4px; }
+    
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+    .filter-btn { background: white; border: 1px solid var(--border); color: var(--text-secondary); padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.15s; }
+    .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .btn-action { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-block; transition: background 0.15s; font-size: 1rem; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2); }
+    .btn-action:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-outline { background: white; color: var(--text-secondary); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.15s; font-size: 0.95rem; }
+    .btn-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
+    
+    .loader { text-align: center; padding: 48px; color: var(--text-secondary); }
+    .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+    .error-box { background: #fef2f2; border: 1px solid #f87171; color: #991b1b; padding: 16px; border-radius: 8px; }
+
+    /* ENHANCED TABLE STYLES FOR SCANNABILITY */
+    .table-container { overflow-x: auto; overflow-y: auto; max-height: 70vh; padding: 0; border: 1px solid var(--border); border-radius: 8px; }
+    .overview-table { width: 100%; min-width: 1300px; border-collapse: separate; border-spacing: 0; text-align: left; table-layout: fixed; }
+    
+    .overview-table th { 
+       position: sticky; top: 0; z-index: 10; background: #f8fafc; 
+       padding: 14px 10px; font-size: 0.8rem; color: var(--text-secondary); 
+       text-transform: uppercase; letter-spacing: 0.5px; 
+       border-bottom: 2px solid var(--border);
+    }
+    
+    /* FREEZE FIRST COLUMN (STUDENT) */
+    .overview-table th:first-child { left: 0; z-index: 20; border-right: 2px solid var(--border); }
+    .overview-table td.col-student { position: sticky; left: 0; z-index: 5; background: #ffffff; border-right: 2px solid var(--border); }
+    
+    .overview-table th.sortable { cursor: pointer; transition: background 0.15s; user-select: none; }
+    .overview-table th.sortable:hover { background: #eef2ff; color: var(--primary); }
+    
+    .overview-table td { padding: 14px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 0.95rem; word-wrap: break-word; }
+    .overview-table tbody tr { transition: background 0.1s; cursor: pointer; }
+    
+    /* ZEBRA STRIPING FOR EASIER READING */
+    .overview-table tbody tr:nth-child(even) td:not(.col-student) { background: #f8fafc; }
+    .overview-table tbody tr:hover td { background: #eef2ff !important; }
+    
+    .score-badge { padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; display: inline-block; text-align: center; min-width: 45px; }
+
+    .col-student { width: 220px; }
+    .col-progress { width: 110px; text-align: center; }
+    .col-average { width: 110px; text-align: center; }
+    .col-metric { width: 90px; text-align: center; border-left: 1px dashed #e2e8f0; } 
+    .col-module { width: 90px; text-align: center; vertical-align: middle; }
+    .col-module-th { height: 200px; padding: 12px 5px !important; }
+
+    .mod-header-content {
+       writing-mode: vertical-rl;
+       transform: rotate(180deg);
+       white-space: nowrap;
+       display: inline-block;
+       text-align: left;
+       max-height: 145px;
+       overflow: hidden;
+       text-overflow: ellipsis;
+       color: var(--text-secondary);
+       font-size: 0.85rem;
+       font-weight: 700;
+       letter-spacing: 0.5px;
+    }
+
+    .module-data-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #ffffff; }
+    .module-data-card h4 { margin: 0 0 12px 0; color: var(--primary); font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .mod-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; font-size: 0.9rem; }
+    .mod-stat { background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid var(--border); }
+    .mod-stat-title { color: var(--text-secondary); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+    .mod-stat-value { font-weight: 700; font-size: 1.1rem; color: var(--text); }
+    
+    .editor-top-bar { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 20px 24px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .editor-tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 24px; padding-bottom: 0; }
+    .editor-tab-btn { padding: 12px 20px; border: none; background: transparent; font-size: 0.95rem; font-weight: 600; color: var(--text-secondary); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.15s ease; border-radius: 8px 8px 0 0; }
+    .editor-tab-btn:hover { color: var(--primary); background: #f1f5f9; }
+    .editor-tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: white; }
+    .editor-panel { display: none; animation: fadeIn 0.3s ease; }
+    .editor-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .gui-card { background: white; border: 1px solid var(--border); padding: 24px; border-radius: 12px; margin-bottom: 20px; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .gui-card-inner { background: #f8fafc; border-left: 4px solid var(--primary); padding: 20px; margin-top: 16px; border-radius: 8px; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; }
+    .gui-card-delete { position: absolute; top: 16px; right: 16px; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: 0.15s; }
+    .gui-card-delete:hover { background: #ef4444; color: white; }
+    .gui-input, .gui-textarea { width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px; font-family: inherit; font-size: 1rem; background: #f8fafc; transition: border 0.15s; }
+    .gui-input:focus, .gui-textarea:focus { border-color: var(--primary); outline: none; background: white; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+    .gui-textarea { min-height: 120px; resize: vertical; line-height: 1.6; }
+    .gui-label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: 0.1s; background: white; }
+    .check-item:hover { background: #f8fafc; border-color: var(--primary); }
+    .staging-card { border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; background: #f8fafc; }
+    .staging-card label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; margin-top: 12px; }
+    .staging-card textarea, .staging-card input { width: 100%; box-sizing: border-box; padding: 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 1.05rem; }
+    .staging-card textarea { resize: vertical; min-height: 80px; }
+    
+    .feed-container { max-height: 600px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 10px; }
+    .feed-item { background: white; border: 1px solid var(--border); padding: 16px; border-radius: 8px; border-left: 5px solid var(--primary); animation: slideIn 0.4s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-15px); } to { opacity: 1; transform: translateX(0); } }
+    .lb-card { display: flex; align-items: center; padding: 16px; background: white; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .lb-gold { border-color: #fbbf24; background: #fffbeb; }
+    .lb-silver { border-color: #94a3b8; background: #f8fafc; }
+    .lb-bronze { border-color: #b45309; background: #fff7ed; }
+
+    #fullscreen-presentation { 
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+      background-color: #ffffff; color: #0f172a; z-index: 9999; 
+      overflow-y: auto; padding: 2vh 2vw; box-sizing: border-box; 
+      display: flex; flex-direction: column; align-items: center; 
+    }
+    #fullscreen-presentation h1 { 
+      font-size: clamp(2rem, 4vh, 3.5rem); 
+      text-transform: uppercase; letter-spacing: 3px; 
+      margin: 0 0 2vh 0; color: #0f172a; text-align: center; 
+      border-bottom: 6px solid var(--primary); padding-bottom: 1vh; 
+      flex-shrink: 0; 
+    }
+    .whiteboard-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr)); 
+      grid-auto-rows: 1fr; 
+      gap: 1.5vw; 
+      width: 100%; max-width: 100%; 
+      flex-grow: 1; align-content: stretch; padding-bottom: 2vh; 
+    }
+    .flip-card { 
+      background-color: transparent; perspective: 1000px; 
+      width: 100%; height: 100%; min-height: 250px; 
+    }
+    .flip-card-inner { 
+      position: relative; width: 100%; height: 100%; 
+      transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); 
+      transform-style: preserve-3d; cursor: pointer; 
+    }
+    .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+    .flip-card-front, .flip-card-back { 
+      position: absolute; width: 100%; height: 100%; backface-visibility: hidden; 
+      display: flex; flex-direction: column; align-items: center; justify-content: center; 
+      border-radius: 16px; padding: 2vw; box-sizing: border-box; text-align: center; 
+      box-shadow: 0 8px 25px rgba(0,0,0,0.06); border: 2px solid var(--border); overflow-y: auto; 
+    }
+    .flip-card-front { background-color: #ffffff; border-top: 10px solid var(--primary); }
+    .flip-card-back { background-color: #f8fafc; border-top: 10px solid var(--success); transform: rotateY(180deg); }
+    
+    .flip-card-front h4, .flip-card-back h4 { 
+      margin: 0; font-size: clamp(0.85rem, 1vw, 1.2rem); text-transform: uppercase; 
+      letter-spacing: 2px; position: absolute; top: 1.5vh; width: 100%; 
+    }
+    .flip-card-front h4 { color: #64748b; } .flip-card-back h4 { color: var(--success); }
+    
+    .flip-card-front .question-text { 
+      font-size: clamp(1.5rem, 2.2vw, 3rem); font-weight: 700; line-height: 1.3; 
+      color: var(--text); width: 100%; margin: auto 0; display: flex; align-items: center; justify-content: center;
+    }
+    .flip-card-back .answer-text { 
+      font-size: clamp(1.8rem, 2.8vw, 4rem); font-weight: 800; line-height: 1.2; 
+      color: var(--success); width: 100%; margin: auto 0; display: flex; align-items: center; justify-content: center;
+    }
+    .flip-card-front .hint-text { 
+      position: absolute; bottom: 1.5vh; color: #94a3b8; font-size: clamp(0.75rem, 0.9vw, 1rem); font-style: italic; 
+    }
+    .exit-btn { 
+      margin-top: auto; background: white; color: var(--text-secondary); 
+      border: 2px solid var(--border); padding: 1vh 2vw; border-radius: 8px; cursor: pointer; 
+      font-weight: 600; font-size: clamp(1rem, 1.2vw, 1.2rem); box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+      flex-shrink: 0; z-index: 10;
+    }
+
+    @media print {
+      body * { visibility: hidden; }
+      #parent-report-card, #parent-report-card * { visibility: visible; }
+      #parent-report-card { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; border: none; box-shadow: none; }
+      .app-container { background: white; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="brand"><h1>Student Learning Hub Admin</h1><p>Synchronising with connected datasets...</p></div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('live')"><span style="color:#ef4444;">🔴</span> Live Lesson</button>
+        <button class="tab-btn" onclick="switchTab('students')">👥 Class List</button>
+        <button class="tab-btn" onclick="switchTab('parents')">👨‍👩‍👧 Parents' Evening</button>
+        <button class="tab-btn" onclick="switchTab('class')">📊 Class Insights</button>
+        <button class="tab-btn" onclick="switchTab('setquiz')" style="color:#e11d48;">📋 Set Quiz</button>
+        <button class="tab-btn" onclick="switchTab('donow')">⏱️ Do Now</button>
+        <button class="tab-btn" onclick="switchTab('editor')" style="color:var(--primary); font-weight:700;">📝 Editor</button>
+      </div>
+    </header>
+
+    <div class="controls-bar">
+      <div>
+        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">ACTIVE COURSE</label>
+        <select id="course-selector" onchange="onCourseChanged()" style="margin-left: 10px;"></select>
+      </div>
+    </div>
+
+    <main>
+      <div id="view-loading" class="loader">
+        <div class="spinner"></div>
+        <h2 id="admin-load-title">Loading Database...</h2>
+      </div>
+
+      <div id="view-live" class="view-panel active">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
+          <div>
+            <h3 style="margin:0; color:#ef4444; font-size: 1.5rem;">🔴 Live Lesson Feed</h3>
+            <p style="margin:4px 0 0 0; color:var(--text-secondary);">Real-time tracking and competitive leaderboards for the active course.</p>
+          </div>
+          <div style="background:white; border:1px solid var(--border); padding:10px 20px; border-radius:8px; display:flex; align-items:center; gap:15px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+            <label style="font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:8px; color:var(--text);">
+               <input type="checkbox" id="auto-sync-cb" onchange="toggleAutoSync()" style="width:18px; height:18px;"> 
+               Auto-Sync Feed (15s)
+            </label>
+            <div style="width:1px; height:24px; background:var(--border);"></div>
+            <button class="btn-outline" onclick="fetchLiveLogs(true)" style="padding:6px 16px;">🔄 Refresh Now</button>
+          </div>
+        </div>
+        
+        <div class="grid-2">
+          <div class="card" style="background:#f1f5f9; padding:20px;">
+             <h3 style="margin-top:0; border-bottom:2px solid var(--border); padding-bottom:10px;">Activity Stream</h3>
+             <div id="live-feed-container" class="feed-container"></div>
+          </div>
+          <div class="card" style="background:#f1f5f9; padding:20px;">
+             <h3 style="margin-top:0; border-bottom:2px solid var(--border); padding-bottom:10px;">Hourly Leaderboard 🏆</h3>
+             <p style="font-size:0.9rem; color:var(--text-secondary); margin-top:-5px; margin-bottom: 20px;">Calculated using points earned in the last 60 minutes.</p>
+             <div id="live-leaderboard-container"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-students" class="view-panel">
+        <div id="class-list-view">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 16px;">
+            <div>
+              <h3 style="margin:0;">Class Performance Overview</h3>
+              <div class="filter-bar" style="margin-top: 12px; margin-bottom: 0; padding-bottom: 0; border-bottom: none;">
+                <button id="toggle-modules" class="filter-btn active" onclick="setViewMode('modules')">Module Scores</button>
+                <button id="toggle-setquizzes" class="filter-btn" onclick="setViewMode('setquizzes')">Set Quizzes</button>
+              </div>
+            </div>
+            <button class="btn-outline" id="export-sheet-btn" onclick="exportClassSheet()" style="display:none; flex-shrink:0; border:2px solid var(--primary); color:var(--primary); font-weight:bold;">📥 Export to Google Sheet</button>
+          </div>
+          
+          <div class="card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="table-container">
+              <table class="overview-table">
+                <thead><tr id="class-overview-headers"></tr></thead>
+                <tbody id="class-overview-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="student-detail-view" class="hidden">
+          <button class="btn-outline" style="margin-bottom: 20px;" onclick="showClassList()">← Back to Class Overview</button>
+          <div class="card">
+            <h3 id="profile-name" style="margin-bottom: 4px; font-size: 1.5rem;">Select a Student</h3>
+            <p id="profile-average" style="color:var(--text-secondary); font-weight:600; margin-top:0; margin-bottom: 24px; font-size: 1.1rem;"></p>
+            <div id="profile-content-area"><p style="color:var(--text-secondary);">Select a student to view their modular breakdown.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-parents" class="view-panel">
+        <div class="grid-sidebar">
+          <div>
+            <h3 style="margin-top:0;">Student Reports</h3>
+            <p style="color:var(--text-secondary); font-size:0.85rem; margin-top:-10px; margin-bottom: 15px;">Select a student to generate a print-friendly summary.</p>
+            <div id="parents-list-container"></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:flex-end; margin-bottom:15px;">
+               <button class="btn-outline" onclick="window.print()">🖨️ Print Report</button>
+            </div>
+            <div id="parent-report-card" class="card" style="background: white; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-height: 500px;">
+               <div style="text-align:center; padding: 40px; color:var(--text-secondary);">Select a student to view their report card.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-class" class="view-panel">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <h3 style="margin-top:0;">Aggregated Class Misconceptions</h3>
+              <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top:-8px;">Identify conceptual gaps across the entire cohort.</p>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <button id="filter-all" class="filter-btn active" onclick="setClassFilter('all')">All Time</button>
+            <button id="filter-month" class="filter-btn" onclick="setClassFilter('month')">Last 30 Days</button>
+            <button id="filter-week" class="filter-btn" onclick="setClassFilter('week')">Last 7 Days</button>
+            <button id="filter-today" class="filter-btn" onclick="setClassFilter('today')">Today</button>
+          </div>
+          <table>
+            <thead><tr><th style="width: 60px;">Rank</th><th>Core Topic</th><th>Impacted Students</th></tr></thead>
+            <tbody id="class-misconceptions-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-setquiz" class="view-panel">
+        <div style="max-width: 1200px; margin: 0 auto;">
+          <div class="grid-2">
+             <div class="card">
+               <h3 style="margin-top:0; color:var(--primary);">📚 Select Questions</h3>
+               <p style="color:var(--text-secondary); margin-top:-10px; font-size:0.9rem;">Choose from any module to build your assignment.</p>
+               <div id="sq-manual-list" style="max-height: 500px; overflow-y: auto; padding-right: 10px; margin-top: 15px;"></div>
+             </div>
+             
+             <div class="card">
+               <h3 style="margin-top:0; color:var(--primary);">📝 Quiz Settings</h3>
+               <label class="gui-label">Quiz Name / Date</label>
+               <input type="text" id="sq-title" class="gui-input" placeholder="e.g. 10/06/2026 - Term 1 Review">
+               
+               <div style="margin-top: 20px; background:#f8fafc; padding: 20px; border-radius:8px; border:1px solid var(--border); text-align:center;">
+                   <h2 id="sq-count-display" style="margin:0; color:var(--text); font-size: 2.5rem;">0</h2>
+                   <p style="margin:0; color:var(--text-secondary); font-weight:bold; text-transform:uppercase;">Questions Selected</p>
+               </div>
+               
+               <button id="sq-publish-btn" class="btn-action" style="width:100%; margin-top: 20px; padding: 15px; font-size:1.1rem;" onclick="publishSetQuiz()">🚀 Publish Set Quiz</button>
+             </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-donow" class="view-panel">
+        <div id="donow-step-config" style="max-width: 1200px; margin: 0 auto;">
+          <div class="grid-2">
+             <div class="card">
+               <h3 style="margin-top:0; color:var(--primary);">📚 Browse Course Content</h3>
+               <p style="color:var(--text-secondary); margin-top:-10px; font-size:0.9rem;">Manually build your Do Now by selecting specific unit questions.</p>
+               <div id="donow-manual-list" style="max-height: 500px; overflow-y: auto; padding-right: 10px; margin-top: 15px;"></div>
+             </div>
+             
+             <div class="card">
+               <h3 style="margin-top:0; color:var(--primary);">🎯 Target Misconceptions</h3>
+               <p style="color:var(--text-secondary); margin-top:-10px; font-size:0.9rem;">Auto-pull questions tailored directly to your class's conceptual gaps.</p>
+               <div id="generator-checklist" style="max-height: 500px; overflow-y: auto; padding-right: 10px; margin-top: 15px;"></div>
+             </div>
+          </div>
+          <div class="card" style="margin-top:24px; display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid var(--primary);">
+             <div>
+                <strong style="color:var(--primary); font-size:1.1rem;">Ready to present?</strong><br>
+                <span style="color:var(--text-secondary); font-size:0.9rem;">Select up to 10 total questions from the panels above.</span>
+             </div>
+             <button id="fetch-btn" class="btn-action" style="padding: 14px 28px; font-size: 1.1rem;" onclick="fetchQuestions()">📥 Build Whiteboard Deck</button>
+          </div>
+        </div>
+
+        <div id="donow-step-staging" class="card hidden" style="max-width: 800px; margin: 0 auto;">
+          <h3>Review & Edit Content</h3>
+          <p style="color:var(--text-secondary); margin-top:-10px; margin-bottom: 20px;">Refine the pulled questions and answers before displaying them on the whiteboard.</p>
+          <div id="staging-area"></div>
+          <div style="display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+            <button class="btn-action" onclick="launchFullscreen()">🚀 Launch DO NOW</button>
+            <button class="btn-outline" onclick="cancelDoNow()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-editor" class="view-panel">
+        <div style="max-width: 1100px; margin: 0 auto;">
+          <div id="editor-loading" class="loader hidden"><div class="spinner"></div><p>Fetching modules...</p></div>
+          <div id="editor-content" class="hidden">
+            <div class="editor-top-bar">
+              <div style="flex: 1; max-width: 600px;">
+                <label class="gui-label">TARGET MODULE</label>
+                <select id="editor-module-select" onchange="onEditorModuleChange()" class="gui-input" style="margin-bottom: 0; font-weight: bold; background: white;"></select>
+                <div id="editor-new-module-div" class="hidden" style="margin-top: 12px;">
+                  <label class="gui-label">NEW MODULE NAME</label>
+                  <input type="text" id="editor-new-name" placeholder="e.g. Memory Configuration" class="gui-input" style="margin-bottom: 0; background: white;">
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <button id="editor-save-btn" class="btn-action" style="font-size: 1.1rem; padding: 14px 28px;" onclick="saveModule()">💾 Save Module</button>
+              </div>
+            </div>
+
+            <div id="gui-editor-workspace" class="hidden">
+              <div class="editor-tabs">
+                <button class="editor-tab-btn active" onclick="switchEditorTab('p1')" id="etab-p1">📖 Reading</button>
+                <button class="editor-tab-btn" onclick="switchEditorTab('p2')" id="etab-p2">🔑 Keywords</button>
+                <button class="editor-tab-btn" onclick="switchEditorTab('p3')" id="etab-p3">🧠 Comprehension</button>
+                <button class="editor-tab-btn" onclick="switchEditorTab('p4')" id="etab-p4">🏆 Final Quiz</button>
+                <button class="editor-tab-btn" onclick="switchEditorTab('settings')" id="etab-settings">⚙️ Settings</button>
+              </div>
+              
+              <div id="epanel-p1" class="editor-panel active">
+                <div class="card">
+                  <h3 style="margin-top:0; color:var(--primary);">Reading Texts</h3>
+                  <label class="gui-label">Core Level</label><textarea id="gui-p1-core" class="gui-textarea" style="background:white;"></textarea>
+                  <label class="gui-label">Standard Level</label><textarea id="gui-p1-std" class="gui-textarea" style="background:white;"></textarea>
+                  <label class="gui-label">Deep Level</label><textarea id="gui-p1-deep" class="gui-textarea" style="background:white;"></textarea>
+                </div>
+              </div>
+              
+              <div id="epanel-p2" class="editor-panel">
+                <div class="card">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <div><h3 style="margin:0; color:var(--primary);">Keywords & Definitions</h3></div>
+                    <button class="btn-outline" onclick="actionP2('add')">+ Add Keyword</button>
+                  </div>
+                  <div id="gui-p2-list"></div>
+                </div>
+              </div>
+              
+              <div id="epanel-p3" class="editor-panel">
+                <div class="card">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <div><h3 style="margin:0; color:var(--primary);">Comprehension Chunks</h3></div>
+                    <button class="btn-outline" onclick="actionP3('add')">+ Add New Chunk</button>
+                  </div>
+                  <div id="gui-p3-list"></div>
+                </div>
+              </div>
+              
+              <div id="epanel-p4" class="editor-panel">
+                <div class="card">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <div><h3 style="margin:0; color:var(--primary);">End of Unit Assessment</h3></div>
+                    <button class="btn-outline" onclick="actionP4('add')">+ Add Quiz Question</button>
+                  </div>
+                  <div id="gui-p4-list"></div>
+                </div>
+              </div>
+              
+              <div id="epanel-settings" class="editor-panel">
+                <div class="card">
+                  <h3 style="margin-top:0; color:var(--primary);">Module Settings</h3>
+                  <label class="gui-label">Module Theme Color</label>
+                  <input type="color" id="gui-theme" style="width:120px; height:50px; cursor:pointer; border-radius:8px; border:1px solid var(--border); padding:4px;">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="fullscreen-presentation" class="hidden">
+    <h1>DO NOW SILENT SOLO</h1>
+    <div id="whiteboard-canvas" class="whiteboard-grid"></div>
+    <button class="exit-btn" onclick="exitFullscreen()">End Presentation</button>
+  </div>
+
+  <script>
+    window.onerror = function(msg) { document.getElementById('view-loading').innerHTML = `<div class="error-box"><p>${msg}</p></div>`; return false; };
+
+    let rawDatabaseLogs = [], uniqueCourseList = [], currentSelectedCourse = "";
+    let activeTabId = "live", selectedStudentEmail = "", selectedParentEmail = "";
+    let currentCourseModules = []; 
+    let currentSetQuizzes = [];
+    let classOverviewData = [];
+    let currentSortKey = 'name';
+    let currentSortAsc = true;
+    let currentViewMode = 'modules';
+
+    let fetchedQuestionsData = []; 
+    let currentClassFilter = 'all'; 
+    let editorModules = []; let editState = null; let activeEditorTab = 'p1';
+
+    let liveSyncInterval = null; 
+
+    window.onload = () => {
+      document.getElementById('view-loading').classList.remove('hidden');
+      google.script.run
+        .withFailureHandler(err => { document.getElementById('view-loading').innerHTML = `<div class="error-box"><h3>⚠️ Sync Failed</h3><p>${err.message}</p></div>`; })
+        .withSuccessHandler(logs => {
+          rawDatabaseLogs = logs || [];
+          uniqueCourseList = [...new Set(rawDatabaseLogs.map(l => l.course).filter(Boolean))];
+          
+          const selector = document.getElementById('course-selector');
+          selector.innerHTML = '<option value="">-- Select a Course --</option>'; 
+          
+          if(uniqueCourseList.length > 0) {
+            currentSelectedCourse = ""; 
+            uniqueCourseList.forEach(c => selector.appendChild(new Option(c, c)));
+            document.getElementById('view-loading').classList.add('hidden');
+            document.getElementById('view-' + activeTabId).classList.add('active');
+            clearAllViewsToPlaceholder();
+          } else {
+            document.getElementById('view-loading').innerHTML = "<div class='error-box'><p>❌ No datasets found.</p></div>";
+          }
+        }).getAdminLogs();
+    };
+
+    function onCourseChanged() { 
+      currentSelectedCourse = document.getElementById('course-selector').value; 
+      if (!currentSelectedCourse) {
+         clearAllViewsToPlaceholder();
+         return;
+      }
+      loadCourseModulesAndRender();
+    }
+    
+    function clearAllViewsToPlaceholder() {
+       let blankMessage = '<tr><td colspan="7" style="text-align:center; padding: 40px; color:var(--text-secondary);">Please select an active course track from the top selector menu to build metrics.</td></tr>';
+       
+       document.getElementById('class-overview-headers').innerHTML = `<tr><th>Student Name</th><th>Progress</th><th>Average</th><th>Tests</th><th>Read Time</th><th>Keywords</th><th>Comps</th></tr>`;
+       document.getElementById('class-overview-body').innerHTML = blankMessage;
+       document.getElementById('parents-list-container').innerHTML = "<p style='color:var(--text-secondary); padding:10px;'>Select a course first.</p>";
+       document.getElementById('parent-report-card').innerHTML = "<div style='text-align:center; padding:40px; color:var(--text-secondary);'>Select a course first.</div>";
+       document.getElementById('class-misconceptions-body').innerHTML = blankMessage;
+       document.getElementById('donow-manual-list').innerHTML = "<p style='color:var(--text-secondary); padding:10px;'>Select a course first.</p>";
+       document.getElementById('sq-manual-list').innerHTML = "<p style='color:var(--text-secondary); padding:10px;'>Select a course first.</p>";
+       document.getElementById('generator-checklist').innerHTML = "<p style='color:var(--text-secondary); padding:10px;'>Select a course first.</p>";
+       document.getElementById('export-sheet-btn').style.display = 'none';
+       
+       document.getElementById('live-feed-container').innerHTML = "<p style='color:var(--text-secondary); text-align:center;'>Select a course first.</p>";
+       document.getElementById('live-leaderboard-container').innerHTML = "<p style='color:var(--text-secondary); text-align:center;'>Select a course first.</p>";
+    }
+
+    function switchTab(tabId) {
+      activeTabId = tabId;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      document.querySelectorAll('.view-panel').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + tabId).classList.add('active');
+      renderActiveTab();
+    }
+
+    function loadCourseModulesAndRender() {
+      document.getElementById('view-loading').classList.remove('hidden');
+      document.getElementById('view-' + activeTabId).classList.remove('active');
+      
+      google.script.run
+        .withSuccessHandler(mods => {
+            editorModules = mods.filter(m => m.module !== '__ACTIVE_SET_QUIZ__'); 
+            currentCourseModules = editorModules.map(m => m.module);
+            
+            let courseLogs = rawDatabaseLogs.filter(l => l.course === currentSelectedCourse);
+            currentSetQuizzes = [...new Set(courseLogs.filter(l => (l.module||"").startsWith("Set Quiz:")).map(l => l.module.replace("Set Quiz:", "").trim()))];
+            
+            document.getElementById('view-loading').classList.add('hidden');
+            document.getElementById('view-' + activeTabId).classList.add('active');
+            renderActiveTab();
+        })
+        .withFailureHandler(err => {
+            alert("Error loading modules: " + err.message);
+        })
+        .getAdminModuleList(currentSelectedCourse);
+    }
+
+    function renderActiveTab() {
+      if (!currentSelectedCourse) {
+         clearAllViewsToPlaceholder();
+         return;
+      }
+      if(activeTabId === "live") renderLiveTab(rawDatabaseLogs.filter(l => l.course === currentSelectedCourse));
+      else if(activeTabId === "students") renderStudentTab(rawDatabaseLogs.filter(l => l.course === currentSelectedCourse));
+      else if(activeTabId === "parents") renderParentsTab(rawDatabaseLogs.filter(l => l.course === currentSelectedCourse));
+      else if(activeTabId === "class") renderClassTab(rawDatabaseLogs.filter(l => l.course === currentSelectedCourse));
+      else if(activeTabId === "donow") renderDoNowConfig(rawDatabaseLogs.filter(l => l.course === currentSelectedCourse));
+      else if(activeTabId === "setquiz") renderSetQuizConfig();
+      else if(activeTabId === "editor") renderEditorTab();
+    }
+
+    function buildCurrentState(logs) {
+      let state = {}; 
+      logs.forEach(l => {
+         let email = (l.email || "Unknown").toLowerCase();
+         if(!state[email]) state[email] = {};
+         let mName = (l.module || "General").trim();
+         let p = (l.phase || "").toLowerCase();
+         let sVal = parseInt(l.score) || 0;
+         
+         let miscStr = l.misconceptions || "";
+         let miscItems = [];
+         if (miscStr && !miscStr.match(/^none$/i) && !miscStr.match(/^n\/a$/i) && miscStr !== "-") {
+            miscItems = miscStr.split('|').map(m => m.trim()).filter(Boolean);
+         }
+
+         if (mName !== "Misconception Buster" && mName !== "Custom Revision" && mName !== "Random Quiz") {
+            if(!state[email][mName]) state[email][mName] = {};
+            if (p.includes("final quiz")) {
+               state[email][mName] = {}; 
+               miscItems.forEach(item => { state[email][mName][item.toLowerCase()] = item; });
+            } else if (p.startsWith("comp:")) {
+               let chunkName = (l.phase || "").replace(/comp:/i, "").trim();
+               if (sVal === 100) { delete state[email][mName][chunkName.toLowerCase()]; } 
+               else { state[email][mName][chunkName.toLowerCase()] = chunkName; miscItems.forEach(item => { state[email][mName][item.toLowerCase()] = item; }); }
+            } else if (p === "keyword" && sVal === 0) {
+               miscItems.forEach(item => { state[email][mName][item.toLowerCase()] = item; });
+            }
+         }
+         if (p === "buster clear" && miscItems.length > 0) {
+            miscItems.forEach(clearedTopic => {
+               let ct = clearedTopic.toLowerCase();
+               for (let mod in state[email]) {
+                   if (state[email][mod][ct]) { delete state[email][mod][ct]; }
+               }
+            });
+         }
+      });
+
+      let finalState = {};
+      for (let e in state) {
+         finalState[e] = {};
+         for (let m in state[e]) { finalState[e][m] = new Set(Object.values(state[e][m])); }
+      }
+      return finalState;
+    }
+
+    // ==========================================
+    // LIVE LESSON TAB
+    // ==========================================
+    function toggleAutoSync() {
+       if (document.getElementById('auto-sync-cb').checked) {
+           liveSyncInterval = setInterval(() => fetchLiveLogs(false), 15000);
+       } else {
+           clearInterval(liveSyncInterval);
+       }
+    }
+
+    function fetchLiveLogs(isManual) {
+       if (!currentSelectedCourse) return;
+       
+       let oldTitle = document.getElementById('admin-load-title').innerText;
+       if (isManual) {
+           document.getElementById('view-loading').classList.remove('hidden');
+           document.getElementById('admin-load-title').innerText = "Syncing Live Data...";
+       }
+
+       google.script.run
+         .withSuccessHandler(logs => {
+             rawDatabaseLogs = logs || [];
+             if (isManual) {
+                 document.getElementById('view-loading').classList.add('hidden');
+                 document.getElementById('admin-load-title').innerText = oldTitle;
+             }
+             renderActiveTab(); 
+         })
+         .withFailureHandler(err => {
+             console.error("Live sync failed: ", err);
+             if (isManual) {
+                 document.getElementById('view-loading').classList.add('hidden');
+                 alert("Live sync failed: " + err.message);
+             }
+         })
+         .getAdminLogs();
+    }
+
+    function renderLiveTab(logs) {
+       let feedHtml = "";
+       let lbMap = {};
+       let now = new Date().getTime();
+
+       let sortedLogs = [...logs].reverse();
+       let feedLogs = sortedLogs.slice(0, 50);
+
+       feedLogs.forEach(l => {
+           let d = parseUKDate(l.timestamp);
+           let timeStr = !isNaN(d) ? d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : "Just now";
+           let name = (l.email || "Unknown").split('@')[0];
+           
+           let phaseColor = "var(--primary)";
+           let pLower = l.phase.toLowerCase();
+           if (pLower.includes("quiz")) phaseColor = "#ef4444";
+           else if (pLower.includes("keyword")) phaseColor = "#10b981";
+           else if (pLower.includes("comp")) phaseColor = "#f59e0b";
+
+           let miscHtml = "";
+           if (l.misconceptions && l.misconceptions !== "None") {
+               miscHtml = `<div style="margin-top:8px; font-size:0.85rem;"><span class="misconception-tag">⚠️ ${l.misconceptions}</span></div>`;
+           }
+
+           let scoreText = pLower === 'reading' ? `${l.score} seconds` : `${l.score}%`;
+
+           feedHtml += `
+             <div class="feed-item" style="border-left-color: ${phaseColor};">
+               <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--text-secondary); margin-bottom:4px;">
+                 <span>${timeStr}</span>
+                 <span style="font-weight:bold; color:${phaseColor};">${l.phase}</span>
+               </div>
+               <div style="font-weight:600; color:var(--text); font-size:1.05rem;">
+                 ${name} <span style="font-weight:normal;">scored ${scoreText} on</span> ${l.module}
+               </div>
+               ${miscHtml}
+             </div>
+           `;
+       });
+
+       logs.forEach(l => {
+           let d = parseUKDate(l.timestamp);
+           if (!isNaN(d) && (now - d.getTime() <= 3600000)) {
+               let name = (l.email || "Unknown").split('@')[0];
+               if (!lbMap[name]) lbMap[name] = 0;
+               
+               let score = parseInt(l.score) || 0;
+               let p = l.phase.toLowerCase();
+               
+               if (p === 'reading') lbMap[name] += Math.min(Math.floor(score/10), 15); 
+               else if (p.startsWith('comp:')) lbMap[name] += score;
+               else if (p === 'keyword') lbMap[name] += score;
+               else if (p.includes('quiz')) lbMap[name] += (score * 2); 
+           }
+       });
+
+       let lbArr = Object.keys(lbMap).map(k => ({name: k, pts: lbMap[k]})).filter(o => o.pts > 0).sort((a,b) => b.pts - a.pts);
+       
+       let lbHtml = "";
+       if (lbArr.length === 0) {
+           lbHtml = `<div style="padding:40px 20px; text-align:center; color:var(--text-secondary); font-size:1.1rem;">No activity recorded in the last hour.<br><small style="display:block; margin-top:5px;">Students will appear here once they start working.</small></div>`;
+       } else {
+           lbArr.forEach((user, idx) => {
+               let rankStyle = "lb-card";
+               let rankBadge = `<span style="color:#64748b; font-weight:bold;">${idx+1}</span>`;
+               
+               if (idx === 0) { rankStyle += " lb-gold"; rankBadge = "🥇"; }
+               else if (idx === 1) { rankStyle += " lb-silver"; rankBadge = "🥈"; }
+               else if (idx === 2) { rankStyle += " lb-bronze"; rankBadge = "🥉"; }
+               else { rankBadge = `🏅 ${idx+1}`; }
+
+               lbHtml += `
+                 <div class="${rankStyle}">
+                    <div style="font-size:1.8rem; width:50px; text-align:center;">${rankBadge}</div>
+                    <div style="flex-grow:1; font-weight:bold; font-size:1.1rem; margin-left:10px;">${user.name}</div>
+                    <div style="font-weight:900; color:var(--primary); font-size:1.3rem;">${user.pts} <span style="font-size:0.8rem; color:var(--text-secondary);">pts</span></div>
+                 </div>
+               `;
+           });
+       }
+
+       document.getElementById('live-feed-container').innerHTML = feedHtml || `<p style="text-align:center; padding: 40px; color:var(--text-secondary);">No recent activity in the logs.</p>`;
+       document.getElementById('live-leaderboard-container').innerHTML = lbHtml;
+    }
+
+
+    // ==========================================
+    // STUDENTS TAB & GOOGLE SHEET EXPORT
+    // ==========================================
+    function setViewMode(mode) {
+        currentViewMode = mode;
+        document.getElementById('toggle-modules').classList.toggle('active', mode === 'modules');
+        document.getElementById('toggle-setquizzes').classList.toggle('active', mode === 'setquizzes');
+        drawClassOverviewTable();
+    }
+
+    function showClassList() {
+        document.getElementById('class-list-view').classList.remove('hidden');
+        document.getElementById('student-detail-view').classList.add('hidden');
+    }
+
+    function showStudentDetail(email) {
+        document.getElementById('class-list-view').classList.add('hidden');
+        document.getElementById('student-detail-view').classList.remove('hidden');
+        let logs = rawDatabaseLogs.filter(l => l.course === currentSelectedCourse);
+        let sMap = {};
+        logs.forEach(l => {
+           if(l.phase && l.phase.toLowerCase().includes("final quiz")) {
+              if(!sMap[l.email]) sMap[l.email] = { count: 0, score: 0 };
+              sMap[l.email].count++; sMap[l.email].score += parseInt(l.score)||0;
+           }
+        });
+        displayProfile(logs, email, sMap[email]);
+    }
+
+    function renderStudentTab(logs) {
+      showClassList(); 
+      let sMap = {};
+      
+      logs.forEach(l => {
+          let e = l.email || "Unknown";
+          if (!sMap[e]) sMap[e] = { email: e, name: e.split('@')[0], moduleScores: {}, setQuizScores: {}, totalTests: 0, totalReading: 0, totalKeywords: 0, totalComps: 0 };
+          
+          let pLower = (l.phase || "").toLowerCase();
+          let mod = l.module || "General";
+          let score = parseInt(l.score) || 0;
+
+          if (pLower === "reading") {
+              sMap[e].totalReading += score;
+          }
+          else if (pLower === "keyword") {
+              sMap[e].totalKeywords++;
+          }
+          else if (pLower.startsWith("comp:")) {
+              sMap[e].totalComps++;
+          }
+          else if (pLower.includes("final quiz")) {
+              sMap[e].totalTests++;
+              if (mod.startsWith("Set Quiz:")) {
+                  let sqName = mod.replace("Set Quiz:", "").trim();
+                  if (!sMap[e].setQuizScores[sqName] || score > sMap[e].setQuizScores[sqName]) {
+                      sMap[e].setQuizScores[sqName] = score;
+                  }
+              } else if (mod !== "Misconception Buster" && mod !== "Custom Revision" && mod !== "Random Quiz") {
+                  if (!sMap[e].moduleScores[mod] || score > sMap[e].moduleScores[mod]) {
+                      sMap[e].moduleScores[mod] = score;
+                  }
+              }
+          }
+      });
+      
+      classOverviewData = Object.values(sMap).map(student => {
+          let modCount = Object.keys(student.moduleScores).length;
+          let modTotal = Object.values(student.moduleScores).reduce((a,b) => a+b, 0);
+          student.modAverage = modCount > 0 ? Math.round(modTotal / modCount) : 0;
+          student.modProgressCount = modCount;
+
+          let sqCount = Object.keys(student.setQuizScores).length;
+          let sqTotal = Object.values(student.setQuizScores).reduce((a,b) => a+b, 0);
+          student.sqAverage = sqCount > 0 ? Math.round(sqTotal / sqCount) : 0;
+          student.sqProgressCount = sqCount;
+
+          return student;
+      });
+
+      drawClassOverviewTable();
+    }
+
+    function sortTable(key) {
+        if (currentSortKey === key) currentSortAsc = !currentSortAsc;
+        else { currentSortKey = key; currentSortAsc = key === 'name'; }
+        drawClassOverviewTable();
+    }
+
+    function getSortIcon(key) {
+        if (currentSortKey !== key) return `<span style="color:#cbd5e1; font-size:0.8rem; margin-left:4px;">↕</span>`;
+        return currentSortAsc ? `<span style="color:var(--primary); font-size:0.8rem; margin-left:4px;">↑</span>` : `<span style="color:var(--primary); font-size:0.8rem; margin-left:4px;">↓</span>`;
+    }
+
+    function drawClassOverviewTable() {
+        document.getElementById('export-sheet-btn').style.display = currentSelectedCourse ? 'inline-block' : 'none';
+
+        let isModMode = currentViewMode === 'modules';
+        let colsToRender = isModMode ? currentCourseModules : currentSetQuizzes;
+        let totalItems = colsToRender.length;
+
+        classOverviewData.forEach(student => {
+            student.progressCount = isModMode ? student.modProgressCount : student.sqProgressCount;
+            student.average = isModMode ? student.modAverage : student.sqAverage;
+        });
+
+        classOverviewData.sort((a, b) => {
+            let valA, valB;
+            if (currentSortKey === 'name') { valA = a.name.toLowerCase(); valB = b.name.toLowerCase(); } 
+            else if (currentSortKey === 'progress') { valA = a.progressCount; valB = b.progressCount; } 
+            else if (currentSortKey === 'average') { valA = a.average; valB = b.average; } 
+            else if (currentSortKey === 'totalTests') { valA = a.totalTests; valB = b.totalTests; }
+            else if (currentSortKey === 'totalReading') { valA = a.totalReading; valB = b.totalReading; }
+            else if (currentSortKey === 'totalKeywords') { valA = a.totalKeywords; valB = b.totalKeywords; }
+            else if (currentSortKey === 'totalComps') { valA = a.totalComps; valB = b.totalComps; }
+            else if (currentSortKey.startsWith('mod_')) {
+                let modName = currentSortKey.replace('mod_', '');
+                let sourceObjA = isModMode ? a.moduleScores : a.setQuizScores;
+                let sourceObjB = isModMode ? b.moduleScores : b.setQuizScores;
+                valA = sourceObjA[modName] !== undefined ? sourceObjA[modName] : -1;
+                valB = sourceObjB[modName] !== undefined ? sourceObjB[modName] : -1;
+            }
+            if (valA < valB) return currentSortAsc ? -1 : 1;
+            if (valA > valB) return currentSortAsc ? 1 : -1;
+            return 0;
+        });
+
+        let thead = `<tr>
+            <th class="sortable col-student" onclick="sortTable('name')" style="vertical-align:bottom;">Student ${getSortIcon('name')}</th>
+            <th class="sortable col-progress" onclick="sortTable('progress')" style="vertical-align:bottom;">Progress ${getSortIcon('progress')}</th>
+            <th class="sortable col-average" onclick="sortTable('average')" style="vertical-align:bottom;">Average ${getSortIcon('average')}</th>
+            <th class="sortable col-metric" onclick="sortTable('totalTests')" style="vertical-align:bottom;" title="Test Attempts">Tests ${getSortIcon('totalTests')}</th>
+            <th class="sortable col-metric" onclick="sortTable('totalReading')" style="vertical-align:bottom;" title="Reading Time">Read Time ${getSortIcon('totalReading')}</th>
+            <th class="sortable col-metric" onclick="sortTable('totalKeywords')" style="vertical-align:bottom;" title="Keywords Practised">Keywords ${getSortIcon('totalKeywords')}</th>
+            <th class="sortable col-metric" onclick="sortTable('totalComps')" style="vertical-align:bottom;" title="Comprehensions Completed">Comps ${getSortIcon('totalComps')}</th>`;
+        
+        colsToRender.forEach(mod => { 
+            thead += `<th class="sortable col-module col-module-th" onclick="sortTable('mod_${mod}')">
+                        <div style="display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:8px;">
+                            <div class="mod-header-content" title="${mod}">${mod}</div>
+                            <div>${getSortIcon('mod_'+mod)}</div>
+                        </div>
+                      </th>`; 
+        });
+        thead += `</tr>`;
+        document.getElementById('class-overview-headers').innerHTML = thead;
+
+        let tbody = "";
+        classOverviewData.forEach(student => {
+            let progressText = `${student.progressCount} / ${totalItems > 0 ? totalItems : student.progressCount}`;
+            let avgColor = student.average >= 80 ? 'var(--success)' : (student.average >= 50 ? '#f59e0b' : 'var(--error)');
+            if (student.progressCount === 0) avgColor = 'var(--text-secondary)';
+            
+            let readHours = Math.floor(student.totalReading / 3600);
+            let readMins = Math.floor((student.totalReading % 3600) / 60);
+            let readStr = readHours > 0 ? `${readHours}h ${readMins}m` : `${readMins}m`;
+
+            tbody += `<tr onclick="showStudentDetail('${student.email}')">
+                <td class="col-student"><div style="font-weight:700; color:var(--text);">${student.name}</div><div style="color:var(--text-secondary); font-size:0.8rem;">${student.email}</div></td>
+                <td class="col-progress"><span class="badge-neutral">${progressText}</span></td>
+                <td class="col-average"><strong style="color:${avgColor}; font-size:1.05rem;">${student.progressCount > 0 ? student.average + '%' : '-'}</strong></td>
+                <td class="col-metric" style="text-align:center;"><span style="color:#4f46e5; font-weight:bold;">${student.totalTests}</span></td>
+                <td class="col-metric" style="text-align:center;"><span style="color:#059669; font-weight:bold;">${readStr}</span></td>
+                <td class="col-metric" style="text-align:center;"><span style="color:#d97706; font-weight:bold;">${student.totalKeywords}</span></td>
+                <td class="col-metric" style="text-align:center;"><span style="color:#dc2626; font-weight:bold;">${student.totalComps}</span></td>`;
+            
+            colsToRender.forEach(mod => {
+                let score = isModMode ? student.moduleScores[mod] : student.setQuizScores[mod];
+                if (score !== undefined) {
+                    let sColor = score >= 80 ? '#065f46' : (score >= 50 ? '#92400e' : '#991b1b');
+                    let sBg = score >= 80 ? '#d1fae5' : (score >= 50 ? '#fef3c7' : '#fee2e2');
+                    tbody += `<td class="col-module"><span class="score-badge" style="background:${sBg}; color:${sColor};">${score}%</span></td>`;
+                } else {
+                    tbody += `<td class="col-module" style="color:#cbd5e1; font-weight:bold; text-align:center;">-</td>`;
+                }
+            });
+            tbody += `</tr>`;
+        });
+
+        if(classOverviewData.length === 0) {
+            tbody = `<tr><td colspan="${7 + totalItems}" style="text-align:center; padding: 40px; color:var(--text-secondary);">No students have taken quizzes yet.</td></tr>`;
+        }
+        document.getElementById('class-overview-body').innerHTML = tbody;
+    }
+
+    function exportClassSheet() {
+       if (!currentSelectedCourse || classOverviewData.length === 0) return;
+       
+       const btn = document.getElementById('export-sheet-btn');
+       const baseLabel = btn.innerText;
+       btn.innerText = "⏳ Building Sheet...";
+       btn.disabled = true;
+
+       let isModMode = currentViewMode === 'modules';
+       let colsToRender = isModMode ? currentCourseModules : currentSetQuizzes;
+       
+       let labelType = isModMode ? "Modules" : "Set Quizzes";
+
+       let sheetHeaders = ["Student Username", "Email Identifier", `${labelType} Completed`, "Average Score", "Test Attempts", "Reading Time", "Keywords Completed", "Comps Completed"];
+       colsToRender.forEach(mod => sheetHeaders.push(mod));
+
+       let sheetRows = [];
+       classOverviewData.forEach(student => {
+          let progressVal = `${student.progressCount} / ${colsToRender.length}`;
+          let averageVal = student.progressCount > 0 ? student.average + '%' : '-';
+          
+          let readHours = Math.floor(student.totalReading / 3600);
+          let readMins = Math.floor((student.totalReading % 3600) / 60);
+          let readStr = readHours > 0 ? `${readHours}h ${readMins}m` : `${readMins}m`;
+
+          let columns = [student.name, student.email, progressVal, averageVal, student.totalTests, readStr, student.totalKeywords, student.totalComps];
+          
+          colsToRender.forEach(mod => {
+             let mark = isModMode ? student.moduleScores[mod] : student.setQuizScores[mod];
+             columns.push(mark !== undefined ? mark + '%' : '-');
+          });
+          sheetRows.push(columns);
+       });
+
+       google.script.run
+         .withSuccessHandler(spreadsheetUrl => {
+            btn.innerText = baseLabel; btn.disabled = false;
+            window.open(spreadsheetUrl, '_blank'); 
+         })
+         .withFailureHandler(err => {
+            btn.innerText = baseLabel; btn.disabled = false;
+            alert("Spreadsheet generation dropped: " + err.message);
+         })
+         .generateClassSpreadsheet(`${currentSelectedCourse} (${labelType})`, sheetHeaders, sheetRows);
+    }
+
+    function displayProfile(logs, email, globalStats) {
+      document.getElementById('profile-name').innerText = email;
+      let avgDisplay = globalStats && globalStats.count > 0 ? Math.round(globalStats.score / globalStats.count) + "%" : "N/A";
+      document.getElementById('profile-average').innerText = `Global Course Average: ${avgDisplay}`;
+      
+      let sLogs = logs.filter(l => (l.email||"Unknown") === email);
+      let trueState = buildCurrentState(sLogs);
+      let myState = trueState[email.toLowerCase()] || {};
+
+      let modData = {};
+      sLogs.forEach(l => {
+        let mName = l.module || "General";
+        if (mName.startsWith("Set Quiz:")) return; 
+        
+        if(!modData[mName]) modData[mName] = { readingTime: 0, compCount: 0, hangmanCount: 0, tests: [] };
+        
+        let p = (l.phase || "").toLowerCase(); let sVal = parseInt(l.score) || 0;
+        if (p === "reading") modData[mName].readingTime += sVal;
+        else if (p.startsWith("comp:")) modData[mName].compCount++;
+        else if (p === "keyword") modData[mName].hangmanCount++;
+        else if (p.includes("final quiz")) modData[mName].tests.push({ score: sVal, date: (l.timestamp || "").split(' ')[0] });
+      });
+
+      let html = ""; let modKeys = Object.keys(modData).sort();
+      if (modKeys.length === 0) html = "<p style='color:var(--text-secondary); text-align:center;'>No activity recorded yet.</p>";
+      else {
+        modKeys.forEach(mName => {
+          let d = modData[mName];
+          let mins = Math.floor(d.readingTime / 60); let secs = d.readingTime % 60;
+          let readStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+          let testStr = "<span style='color:var(--text-secondary); font-weight:normal;'>Not taken</span>";
+          if (d.tests.length > 0) testStr = d.tests.map(t => `<span style="color:var(--primary); font-weight:bold;">${t.score}%</span> <small style="color:#94a3b8;">(${t.date})</small>`).join("<br>");
+          
+          let activeMiscForMod = myState[mName] || new Set();
+          let miscStr = "<span style='color:var(--success); font-weight:600; font-size:0.85rem;'>✅ Clear</span>";
+          if (activeMiscForMod.size > 0) miscStr = Array.from(activeMiscForMod).map(m => `<span class="misconception-tag">⚠️ ${m}</span>`).join("");
+          
+          if (mName !== "Misconception Buster" && mName !== "Custom Revision" && mName !== "Random Quiz") {
+             html += `<div class="module-data-card"><h4>${mName}</h4><div class="mod-stats-grid"><div class="mod-stat"><div class="mod-stat-title">Reading Time</div><div class="mod-stat-value">${readStr}</div></div><div class="mod-stat"><div class="mod-stat-title">Comprehensions Done</div><div class="mod-stat-value">${d.compCount}</div></div><div class="mod-stat"><div class="mod-stat-title">Keywords Practised</div><div class="mod-stat-value">${d.hangmanCount}</div></div><div class="mod-stat"><div class="mod-stat-title">Unit Test History</div><div class="mod-stat-value">${testStr}</div></div></div><div style="background: #fff7ed; padding: 12px; border-radius: 6px; border: 1px solid #ffedd5;"><div style="font-size: 0.8rem; font-weight: 700; color: #c2410c; margin-bottom: 8px; text-transform: uppercase;">Active Misconceptions</div><div>${miscStr}</div></div></div>`;
+          }
+        });
+      }
+      document.getElementById('profile-content-area').innerHTML = html;
+    }
+
+    // ==========================================
+    // PARENTS EVENING TAB
+    // ==========================================
+    function renderParentsTab(logs) {
+      const container = document.getElementById('parents-list-container'); 
+      container.innerHTML = "";
+      
+      let sMap = {};
+      logs.forEach(l => {
+        let e = l.email || "Unknown";
+        if(!sMap[e]) sMap[e] = { count: 0, score: 0 };
+        if(l.phase && l.phase.toLowerCase().includes("final quiz")) { sMap[e].count++; sMap[e].score += parseInt(l.score) || 0; }
+      });
+      
+      let emails = Object.keys(sMap).sort();
+      emails.forEach(e => {
+        let avg = sMap[e].count > 0 ? Math.round(sMap[e].score / sMap[e].count) + "%" : "N/A";
+        let div = document.createElement('div'); 
+        div.className = `list-item ${e === selectedParentEmail ? 'selected' : ''}`;
+        div.onclick = () => { selectedParentEmail = e; renderActiveTab(); };
+        div.innerHTML = `<div><b>${e.split('@')[0]}</b><br><small>${e}</small></div>`;
+        container.appendChild(div);
+      });
+      
+      if(!selectedParentEmail && emails.length > 0) selectedParentEmail = emails[0];
+      if(selectedParentEmail) showParentReport(logs, selectedParentEmail, sMap[selectedParentEmail]);
+    }
+
+    function showParentReport(logs, email, globalStats) {
+      const card = document.getElementById('parent-report-card');
+      
+      let rawName = email.split('@')[0];
+      let formattedName = rawName.split('.').map(n => n.charAt(0).toUpperCase() + n.slice(1)).join(' ');
+
+      let avgDisplay = globalStats && globalStats.count > 0 ? Math.round(globalStats.score / globalStats.count) + "%" : "N/A";
+      let avgColor = (globalStats && globalStats.count > 0) ? (Math.round(globalStats.score/globalStats.count) >= 80 ? '#10b981' : (Math.round(globalStats.score/globalStats.count) >= 50 ? '#f59e0b' : '#ef4444')) : '#475569';
+
+      let sLogs = logs.filter(l => (l.email||"Unknown") === email);
+      
+      let modScores = {};
+      let sqScores = {};
+
+      sLogs.forEach(l => {
+         if (l.phase && l.phase.toLowerCase().includes("final quiz")) {
+            let m = l.module || "General";
+            let s = parseInt(l.score) || 0;
+            if (m.startsWith("Set Quiz:")) {
+                sqScores[m.replace("Set Quiz:", "").trim()] = s;
+            } else if (m !== "Misconception Buster" && m !== "Custom Revision" && m !== "Random Quiz") {
+                if (!modScores[m] || s > modScores[m]) modScores[m] = s;
+            }
+         }
+      });
+
+      let trueState = buildCurrentState(sLogs);
+      let myState = trueState[email.toLowerCase()] || {};
+      let allMisc = [];
+      
+      for (let mod in myState) {
+         if (mod !== "Misconception Buster" && mod !== "Custom Revision" && mod !== "Random Quiz") {
+            myState[mod].forEach(topic => {
+               let displayMod = mod.startsWith("Set Quiz:") ? "Assignment" : mod;
+               allMisc.push({ module: displayMod, topic: topic });
+            });
+         }
+      }
+      
+      let topMisc = allMisc.slice(0, 5); 
+
+      let html = `
+        <div style="text-align: center; border-bottom: 2px solid var(--border); padding-bottom: 24px; margin-bottom: 24px;">
+           <h2 style="margin: 0 0 4px 0; font-size: 2rem; color: var(--primary);">${formattedName}</h2>
+           <p style="margin: 0; color: var(--text-secondary);">${email}</p>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 20px 24px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 32px;">
+           <h3 style="margin: 0; color: var(--text);">Overall Course Average</h3>
+           <span style="font-size: 1.5rem; font-weight: 800; color: ${avgColor};">${avgDisplay}</span>
+        </div>
+        
+        <div style="margin-bottom: 32px;">
+           <h3 style="margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 8px; color: var(--text);">Module Performance</h3>
+           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
+      `;
+
+      if (Object.keys(modScores).length === 0) {
+         html += `<p style="color:var(--text-secondary); grid-column: 1 / -1;">No module assessments completed yet.</p>`;
+      } else {
+         for (let mod in modScores) {
+             let s = modScores[mod];
+             let sColor = s >= 80 ? '#10b981' : (s >= 50 ? '#f59e0b' : '#ef4444');
+             html += `
+               <div style="display: flex; justify-content: space-between; padding: 12px; background: white; border: 1px solid var(--border); border-radius: 8px;">
+                  <span style="font-weight: 600; color: var(--text-secondary);">${mod}</span>
+                  <span style="font-weight: 800; color: ${sColor};">${s}%</span>
+               </div>
+             `;
+         }
+      }
+      html += `</div></div>`;
+
+      if (Object.keys(sqScores).length > 0) {
+         html += `
+         <div style="margin-bottom: 32px;">
+            <h3 style="margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 8px; color: var(--text);">Set Quiz Performance</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
+         `;
+         for (let sq in sqScores) {
+             let s = sqScores[sq];
+             let sColor = s >= 80 ? '#10b981' : (s >= 50 ? '#f59e0b' : '#ef4444');
+             html += `
+               <div style="display: flex; justify-content: space-between; padding: 12px; background: #f8fafc; border: 1px dashed var(--border); border-radius: 8px;">
+                  <span style="font-weight: 600; color: var(--primary);">${sq}</span>
+                  <span style="font-weight: 800; color: ${sColor};">${s}%</span>
+               </div>
+             `;
+         }
+         html += `</div></div>`;
+      }
+
+      html += `
+        <div>
+           <h3 style="margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 8px; color: var(--text);">Priority Focus Areas</h3>
+           <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 16px;">To improve their retention and overall grade, ${formattedName.split(' ')[0]} should focus on reviewing the following topics on the Hub:</p>
+      `;
+
+      if (topMisc.length === 0) {
+         html += `
+           <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 16px; border-radius: 8px; color: #065f46; font-weight: 600; text-align: center;">
+              🌟 Excellent work! ${formattedName.split(' ')[0]} currently has no active misconceptions.
+           </div>
+         `;
+      } else {
+         html += `<ul style="margin: 0; padding-left: 20px; color: #991b1b; line-height: 1.6;">`;
+         topMisc.forEach(m => {
+            html += `<li style="margin-bottom: 8px;"><b>${m.module}:</b> Focus on <i>${m.topic}</i></li>`;
+         });
+         html += `</ul>`;
+         
+         if (allMisc.length > 5) {
+            html += `<p style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic; margin-top: 12px;">*Showing top 5 areas out of ${allMisc.length} total.</p>`;
+         }
+      }
+      html += `</div>`;
+
+      card.innerHTML = html;
+    }
+
+    function parseUKDate(dateStr) {
+      if (!dateStr) return new Date(NaN);
+      let parts = dateStr.split(" "); let dateParts = parts[0].split("/");
+      if (dateParts.length === 3) {
+        let day = parseInt(dateParts[0], 10); let month = parseInt(dateParts[1], 10) - 1; let year = parseInt(dateParts[2], 10);
+        if (parts[1]) { let timeParts = parts[1].split(":"); return new Date(year, month, day, timeParts[0]||0, timeParts[1]||0, timeParts[2]||0); }
+        return new Date(year, month, day);
+      } return new Date(dateStr); 
+    }
+
+    // ==========================================
+    // CLASS INSIGHTS
+    // ==========================================
+    function setClassFilter(filterType) {
+      currentClassFilter = filterType;
+      document.querySelectorAll('.filter-bar button').forEach(b => b.classList.remove('active'));
+      document.getElementById('filter-' + filterType).classList.add('active'); renderActiveTab();
+    }
+
+    function getClassMis(logs) {
+      let map = {}; let now = new Date();
+      let timeFilteredLogs = logs.filter(l => {
+        if (currentClassFilter === 'all') return true;
+        let d = parseUKDate(l.timestamp); if (isNaN(d.getTime())) return true; 
+        if (currentClassFilter === 'today') return d.toDateString() === now.toDateString();
+        else if (currentClassFilter === 'week') { let diffDays = (now - d) / (1000 * 60 * 60 * 24); return diffDays <= 7 && diffDays >= 0; }
+        else if (currentClassFilter === 'month') { let diffDays = (now - d) / (1000 * 60 * 60 * 24); return diffDays <= 30 && diffDays >= 0; }
+        return true;
+      });
+      
+      let trueState = buildCurrentState(timeFilteredLogs);
+
+      for (let email in trueState) {
+          for (let mod in trueState[email]) {
+              trueState[email][mod].forEach(m => {
+                  if(!map[m]) map[m] = new Set();
+                  map[m].add(email.split('@')[0]);
+              });
+          }
+      }
+      return Object.keys(map).map(k => ({ text: k, count: map[k].size, students: Array.from(map[k]) })).sort((a,b) => b.count - a.count);
+    }
+
+    function renderClassTab(logs) {
+      const tbody = document.getElementById('class-misconceptions-body'); tbody.innerHTML = "";
+      let data = getClassMis(logs);
+      if(data.length === 0) return tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; padding: 32px;'>No active misconceptions logged for this timeframe.</td></tr>";
+      data.forEach((d, i) => {
+        let studentTags = d.students.map(s => `<span class="student-tag">${s}</span>`).join(" ");
+        tbody.innerHTML += `<tr><td style="text-align:center; font-weight:bold; font-size:1.1rem;">${i+1}</td><td><div style="color:#c2410c; font-weight:600; font-size:1.05rem;">${d.text}</div></td><td><div style="margin-bottom: 8px;"><span style="background:#fee2e2; color:#ef4444; padding:3px 10px; border-radius:12px; font-weight:bold; font-size: 0.85rem;">${d.count} Impacted</span></div><div style="display:flex; flex-wrap:wrap; gap:6px;">${studentTags}</div></td></tr>`;
+      });
+    }
+
+    // ==========================================
+    // DO NOW GENERATOR
+    // ==========================================
+    function getAllQuestions() {
+        let qs = [];
+        editorModules.forEach(mod => {
+           let parsed;
+           try { parsed = JSON.parse(mod.json); } catch(e){ return; }
+           if(parsed.p4) {
+              parsed.p4.forEach(q => {
+                 let distractors = q.options.filter((o,i) => i !== q.a);
+                 while(distractors.length < 3) distractors.push("Missing Option");
+                 qs.push({
+                    module: mod.module,
+                    concept: q.concept || q.chunkTitle || "General",
+                    q: q.q,
+                    c: q.options[q.a],
+                    d: distractors
+                 });
+              });
+           }
+        });
+        return qs;
+    }
+
+    function renderDoNowConfig(logs) {
+      document.getElementById('donow-step-config').classList.remove('hidden'); 
+      document.getElementById('donow-step-staging').classList.add('hidden');
+      
+      const cl = document.getElementById('generator-checklist'); 
+      cl.innerHTML = "";
+      let oldFilter = currentClassFilter; currentClassFilter = 'all'; 
+      let data = getClassMis(logs); currentClassFilter = oldFilter; 
+      
+      if(data.length===0) {
+          cl.innerHTML = "<p style='color:var(--text-secondary); padding: 12px;'>No class data available to generate questions.</p>";
+      } else {
+          data.forEach(d => { 
+              cl.innerHTML += `<label class="check-item"><input type="checkbox" value="${d.text.replace(/"/g, '&quot;')}" class="dn-misc-cb"> <div><b style="font-size:1.05rem;">${d.text}</b><br><small style="color:var(--error); font-weight:600;">⚠️ Affects ${d.count} learners</small></div></label>`; 
+          });
+      }
+
+      const ml = document.getElementById('donow-manual-list');
+      ml.innerHTML = "";
+      let allQs = getAllQuestions();
+      
+      if(allQs.length === 0) {
+          ml.innerHTML = "<p style='color:var(--text-secondary); padding: 12px;'>No modules found. Ensure modules are built in the Editor.</p>";
+          return;
+      }
+      
+      let mods = [...new Set(allQs.map(q => q.module))];
+      mods.forEach(modName => {
+          let modQs = allQs.map((q, i) => ({q, i})).filter(obj => obj.q.module === modName);
+          
+          let details = document.createElement('details');
+          details.style.cssText = "margin-bottom:8px; border:1px solid var(--border); border-radius:6px; background:white; overflow:hidden;";
+          
+          let summary = document.createElement('summary');
+          summary.style.cssText = "padding:12px; font-weight:700; cursor:pointer; background:#f8fafc; color:var(--text); list-style:none; display:flex; justify-content:space-between; align-items:center;";
+          summary.innerHTML = `<span>📚 ${modName}</span> <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:normal;">${modQs.length} Questions ▾</span>`;
+          
+          let qList = document.createElement('div');
+          qList.style.cssText = "padding:8px 12px; border-top:1px solid var(--border);";
+          
+          modQs.forEach(obj => {
+              qList.innerHTML += `<label class="check-item" style="padding:8px; margin-bottom:4px; font-size:0.95rem; display:flex; align-items:flex-start;"><input type="checkbox" value="${obj.i}" class="dn-manual-cb" style="margin-top:4px;"> <div><span style="color:var(--primary); font-weight:bold; font-size:0.75rem; display:block; text-transform:uppercase; margin-bottom:2px;">${obj.q.concept}</span><span style="color:var(--text); line-height:1.3;">${obj.q.q}</span></div></label>`;
+          });
+          
+          details.appendChild(summary);
+          details.appendChild(qList);
+          ml.appendChild(details);
+      });
+    }
+
+    function fetchQuestions() {
+      const manualCbs = document.querySelectorAll('.dn-manual-cb:checked');
+      const miscCbs = document.querySelectorAll('.dn-misc-cb:checked');
+      
+      if (manualCbs.length + miscCbs.length === 0) return alert("Select at least one question or misconception topic.");
+      if (manualCbs.length + miscCbs.length > 10) return alert("Max 10 total selections allowed to fit on the screen.");
+      
+      fetchedQuestionsData = [];
+      let allQs = getAllQuestions();
+      
+      manualCbs.forEach(cb => {
+          let q = allQs[parseInt(cb.value)];
+          if(q) {
+             fetchedQuestionsData.push({ 
+                text: q.concept, 
+                data: { question: q.q, correct: q.c, distractors: q.d } 
+             });
+          }
+      });
+      
+      miscCbs.forEach(cb => {
+          let target = cb.value.toLowerCase().trim();
+          let matches = allQs.filter(q => (q.concept||"").toLowerCase().trim().includes(target) || target.includes((q.concept||"").toLowerCase().trim()));
+          
+          if (matches.length > 0) {
+              let q = matches[Math.floor(Math.random() * matches.length)];
+              fetchedQuestionsData.push({ 
+                 text: cb.value, 
+                 data: { question: q.q, correct: q.c, distractors: q.d } 
+              });
+          } else {
+              fetchedQuestionsData.push({ 
+                 text: cb.value, 
+                 data: { question: "⚠️ No unit quiz questions map directly to this topic.", correct: "[Type answer here]", distractors: ["[D1]", "[D2]", "[D3]"] } 
+              });
+          }
+      });
+      
+      buildStagingArea();
+    }
+
+    function buildStagingArea() {
+      document.getElementById('donow-step-config').classList.add('hidden'); 
+      document.getElementById('donow-step-staging').classList.remove('hidden');
+      
+      const staging = document.getElementById('staging-area'); 
+      staging.innerHTML = "";
+      
+      fetchedQuestionsData.forEach((qItem, idx) => {
+        let block = document.createElement('div'); block.className = 'staging-card';
+        block.innerHTML = `<div style="font-weight:700; color:var(--primary); margin-bottom:10px;">Tile ${idx + 1}: ${qItem.text}</div><label>Question:</label><textarea id="edit-q-${idx}">${qItem.data.question}</textarea><label>Correct Answer (Hidden until clicked):</label><input type="text" id="edit-c-${idx}" class="correct-ans" value="${qItem.data.correct}">`;
+        staging.appendChild(block);
+      });
+    }
+
+    function cancelDoNow() { document.getElementById('donow-step-staging').classList.add('hidden'); document.getElementById('donow-step-config').classList.remove('hidden'); }
+
+    function launchFullscreen() {
+      const canvas = document.getElementById('whiteboard-canvas'); canvas.innerHTML = "";
+      fetchedQuestionsData.forEach((qItem, idx) => {
+        let finalQ = document.getElementById(`edit-q-${idx}`).value; let finalC = document.getElementById(`edit-c-${idx}`).value;
+        let tile = document.createElement('div'); tile.className = "flip-card"; tile.onclick = () => tile.classList.toggle('flipped');
+        tile.innerHTML = `<div class="flip-card-inner"><div class="flip-card-front"><h4>${qItem.text}</h4><div class="question-text">${finalQ}</div><div class="hint-text">Click card to reveal answer</div></div><div class="flip-card-back"><h4>Correct Answer</h4><div class="answer-text">${finalC}</div></div></div>`;
+        canvas.appendChild(tile);
+      });
+      const fsDiv = document.getElementById('fullscreen-presentation'); fsDiv.classList.remove('hidden');
+      if (fsDiv.requestFullscreen) fsDiv.requestFullscreen(); else if (fsDiv.webkitRequestFullscreen) fsDiv.webkitRequestFullscreen();
+    }
+    function exitFullscreen() {
+      if (document.exitFullscreen) document.exitFullscreen(); else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      document.getElementById('fullscreen-presentation').classList.add('hidden');
+    }
+    document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) document.getElementById('fullscreen-presentation').classList.add('hidden'); });
+
+    // ==========================================
+    // SET QUIZ GENERATOR
+    // ==========================================
+    function renderSetQuizConfig() {
+      const ml = document.getElementById('sq-manual-list');
+      ml.innerHTML = "";
+      let allQs = getAllQuestions();
+      
+      document.getElementById('sq-count-display').innerText = "0";
+      document.getElementById('sq-title').value = new Date().toLocaleDateString();
+      
+      if(allQs.length === 0) {
+          ml.innerHTML = "<p style='color:var(--text-secondary); padding: 12px;'>No modules found. Ensure modules are built in the Editor.</p>";
+          return;
+      }
+      
+      let mods = [...new Set(allQs.map(q => q.module))];
+      mods.forEach(modName => {
+          let modQs = allQs.map((q, i) => ({q, i})).filter(obj => obj.q.module === modName);
+          
+          let details = document.createElement('details');
+          details.style.cssText = "margin-bottom:8px; border:1px solid var(--border); border-radius:6px; background:white; overflow:hidden;";
+          
+          let summary = document.createElement('summary');
+          summary.style.cssText = "padding:12px; font-weight:700; cursor:pointer; background:#f8fafc; color:var(--text); list-style:none; display:flex; justify-content:space-between; align-items:center;";
+          summary.innerHTML = `<span>📚 ${modName}</span> <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:normal;">${modQs.length} Questions ▾</span>`;
+          
+          let qList = document.createElement('div');
+          qList.style.cssText = "padding:8px 12px; border-top:1px solid var(--border);";
+          
+          modQs.forEach(obj => {
+              let cb = document.createElement('input');
+              cb.type = "checkbox";
+              cb.value = obj.i;
+              cb.className = "sq-manual-cb";
+              cb.style.marginTop = "4px";
+              cb.onchange = updateSQCount;
+              
+              let lbl = document.createElement('label');
+              lbl.className = "check-item";
+              lbl.style.cssText = "padding:8px; margin-bottom:4px; font-size:0.95rem; display:flex; align-items:flex-start;";
+              
+              let txtDiv = document.createElement('div');
+              txtDiv.innerHTML = `<span style="color:var(--primary); font-weight:bold; font-size:0.75rem; display:block; text-transform:uppercase; margin-bottom:2px;">${obj.q.concept}</span><span style="color:var(--text); line-height:1.3;">${obj.q.q}</span>`;
+              
+              lbl.appendChild(cb);
+              lbl.appendChild(txtDiv);
+              qList.appendChild(lbl);
+          });
+          
+          details.appendChild(summary);
+          details.appendChild(qList);
+          ml.appendChild(details);
+      });
+    }
+
+    function updateSQCount() {
+        let count = document.querySelectorAll('.sq-manual-cb:checked').length;
+        document.getElementById('sq-count-display').innerText = count;
+    }
+
+    function publishSetQuiz() {
+        let title = document.getElementById('sq-title').value.trim();
+        if (!title) title = new Date().toLocaleDateString();
+        
+        let checked = document.querySelectorAll('.sq-manual-cb:checked');
+        if (checked.length === 0) return alert("Select at least one question to include in the quiz.");
+        
+        let allQs = getAllQuestions(); 
+        let sqData = [];
+        
+        checked.forEach(cb => {
+            let qObj = allQs[parseInt(cb.value)];
+            sqData.push({
+                q: qObj.q,
+                options: [qObj.c, ...qObj.d],
+                a: 0,
+                concept: qObj.concept,
+                sourceModule: qObj.module
+            });
+        });
+        
+        let btn = document.getElementById('sq-publish-btn');
+        let oldText = btn.innerText;
+        btn.innerText = "⏳ Publishing...";
+        btn.disabled = true;
+        
+        google.script.run
+            .withSuccessHandler(() => {
+                alert(`Set Quiz "${title}" published successfully! Students can now access it.`);
+                btn.innerText = oldText;
+                btn.disabled = false;
+                document.querySelectorAll('.sq-manual-cb:checked').forEach(c => c.checked = false);
+                updateSQCount();
+            })
+            .withFailureHandler(err => {
+                alert("Error publishing quiz: " + err.message);
+                btn.innerText = oldText;
+                btn.disabled = false;
+            })
+            .saveSetQuiz(currentSelectedCourse, title, sqData);
+    }
+
+    // ========================================================
+    // VISUAL MODULE BUILDER 
+    // ========================================================
+    function renderEditorTab() {
+      document.getElementById('editor-loading').classList.remove('hidden');
+      document.getElementById('editor-content').classList.add('hidden');
+      document.getElementById('gui-editor-workspace').classList.add('hidden');
+      
+      google.script.run
+        .withSuccessHandler(res => {
+          editorModules = res.filter(m => m.module !== '__ACTIVE_SET_QUIZ__');
+          populateEditorDropdown();
+          document.getElementById('editor-loading').classList.add('hidden');
+          document.getElementById('editor-content').classList.remove('hidden');
+        })
+        .withFailureHandler(err => alert("Failed to load modules: " + err.message))
+        .getAdminModuleList(currentSelectedCourse);
+    }
+
+    function populateEditorDropdown() {
+      const sel = document.getElementById('editor-module-select');
+      sel.innerHTML = '<option value="">-- Select a Module to Edit --</option>';
+      editorModules.forEach(m => sel.appendChild(new Option(m.module, m.module)));
+      sel.appendChild(new Option("✨ + Create New Module", "__NEW__"));
+    }
+
+    const defaultJSONTemplate = { theme: "#4f46e5", p1: { core: "<p>Basic reading text...</p>", standard: "", deep: "" }, p2: [ { t: "Term", d: "Definition" } ], p3: [ { chunkTitle: "Topic 1", chunkText: "<p>Text...</p>", questions: [ { q: "Question?", options: ["Correct", "Wrong1", "Wrong2", "Wrong3"], a: 0 } ] } ], p4: [ { q: "Final Question?", concept: "Topic 1", options: ["Correct", "Wrong1", "Wrong2", "Wrong3"], a: 0 } ] };
+
+    function escapeHtml(text) { if(!text) return ""; return text.toString().replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    function switchEditorTab(tabId) { harvestGUI(); activeEditorTab = tabId; document.querySelectorAll('.editor-tab-btn').forEach(btn => btn.classList.remove('active')); document.getElementById('etab-' + tabId).classList.add('active'); document.querySelectorAll('.editor-panel').forEach(panel => panel.classList.remove('active')); document.getElementById('epanel-' + tabId).classList.add('active'); renderGUI(); }
+
+    function onEditorModuleChange() {
+      const sel = document.getElementById('editor-module-select').value; const newNameDiv = document.getElementById('editor-new-module-div'); const wsDiv = document.getElementById('gui-editor-workspace');
+      if (!sel) { newNameDiv.classList.add('hidden'); wsDiv.classList.add('hidden'); return; }
+      wsDiv.classList.remove('hidden');
+      if (sel === '__NEW__') { newNameDiv.classList.remove('hidden'); editState = JSON.parse(JSON.stringify(defaultJSONTemplate)); } 
+      else { newNameDiv.classList.add('hidden'); const mod = editorModules.find(m => m.module === sel); try { editState = JSON.parse(mod.json); } catch(e) { editState = JSON.parse(JSON.stringify(defaultJSONTemplate)); } }
+      if(!editState.p1) editState.p1 = {core:"", standard:"", deep:""}; if(!editState.p2) editState.p2 = []; if(!editState.p3) editState.p3 = []; if(!editState.p4) editState.p4 = [];
+      renderGUI(); switchEditorTab('p1');
+    }
+
+    function harvestGUI() {
+      if(!editState) return;
+      if (activeEditorTab === 'settings') editState.theme = document.getElementById('gui-theme').value;
+      if (activeEditorTab === 'p1') { editState.p1.core = document.getElementById('gui-p1-core').value; editState.p1.standard = document.getElementById('gui-p1-std').value; editState.p1.deep = document.getElementById('gui-p1-deep').value; }
+      if (activeEditorTab === 'p2') { editState.p2 = Array.from(document.querySelectorAll('.p2-row')).map(row => ({ t: row.querySelector('.p2-t').value, d: row.querySelector('.p2-d').value })); }
+      if (activeEditorTab === 'p3') { editState.p3 = Array.from(document.querySelectorAll('.p3-chunk')).map(chunk => ({ chunkTitle: chunk.querySelector('.p3-title').value, chunkText: chunk.querySelector('.p3-text').value, questions: Array.from(chunk.querySelectorAll('.p3-q-row')).map(qEl => ({ q: qEl.querySelector('.p3-q-text').value, a: 0, options: [ qEl.querySelector('.p3-q-c').value, qEl.querySelector('.p3-q-d1').value, qEl.querySelector('.p3-q-d2').value, qEl.querySelector('.p3-q-d3').value ].filter(o => o.trim() !== "") })) })); }
+      if (activeEditorTab === 'settings') { editState.theme = document.getElementById('gui-theme').value; }
+      if (activeEditorTab === 'p4') { editState.p4 = Array.from(document.querySelectorAll('.p4-row')).map(qEl => ({ concept: qEl.querySelector('.p4-concept').value, q: qEl.querySelector('.p4-q-text').value, a: 0, options: [ qEl.querySelector('.p4-q-c').value, qEl.querySelector('.p4-q-d1').value, qEl.querySelector('.p4-q-d2').value, qEl.querySelector('.p4-q-d3').value ].filter(o => o.trim() !== "") })); }
+    }
+
+    function renderGUI() {
+      if(activeEditorTab === 'settings') document.getElementById('gui-theme').value = editState.theme || "#4f46e5";
+      if(activeEditorTab === 'p1') { document.getElementById('gui-p1-core').value = editState.p1.core || ""; document.getElementById('gui-p1-std').value = editState.p1.standard || ""; document.getElementById('gui-p1-deep').value = editState.p1.deep || ""; }
+      if(activeEditorTab === 'p2') renderP2(); if(activeEditorTab === 'p3') renderP3(); if(activeEditorTab === 'p4') renderP4();
+    }
+
+    function renderP2() { const c = document.getElementById('gui-p2-list'); c.innerHTML = ""; editState.p2.forEach((item, i) => { c.innerHTML += `<div class="gui-card p2-row"><button class="gui-card-delete" onclick="actionP2('del', ${i})">Delete</button><div style="display:flex; gap:16px;"><div style="flex:1;"><label class="gui-label">Term</label><input class="gui-input p2-t" value="${escapeHtml(item.t)}"></div><div style="flex:3;"><label class="gui-label">Definition</label><input class="gui-input p2-d" value="${escapeHtml(item.d)}"></div></div></div>`; }); }
+    function renderP3() { const c = document.getElementById('gui-p3-list'); c.innerHTML = ""; editState.p3.forEach((chunk, cIdx) => { let qHtml = ""; (chunk.questions || []).forEach((q, qIdx) => { let distractors = q.options.filter((o, idx) => idx !== q.a); qHtml += `<div class="gui-card-inner p3-q-row"><button class="gui-card-delete" onclick="actionP3Q('del', ${cIdx}, ${qIdx})">Delete Q</button><label class="gui-label">Question</label><input class="gui-input p3-q-text" value="${escapeHtml(q.q)}" style="background:white;"><label class="gui-label" style="color:var(--success);">Correct Answer</label><input class="gui-input p3-q-c" style="border-color:var(--success); border-width:2px; background:white;" value="${escapeHtml(q.options[q.a])}"><label class="gui-label">Distractors (Incorrect Options)</label><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;"><input class="gui-input p3-q-d1" placeholder="Distractor 1" value="${escapeHtml(distractors[0])}" style="background:white;"><input class="gui-input p3-q-d2" placeholder="Distractor 2" value="${escapeHtml(distractors[1])}" style="background:white;"><input class="gui-input p3-q-d3" placeholder="Distractor 3" value="${escapeHtml(distractors[2])}" style="background:white;"></div></div>`; }); c.innerHTML += `<div class="gui-card p3-chunk"><button class="gui-card-delete" style="background:#f1f5f9; color:var(--text); border-color:#cbd5e1;" onclick="actionP3('del', ${cIdx})">🗑️ Delete Chunk</button><label class="gui-label" style="color:var(--primary);">Chunk Title / Target Concept</label><input class="gui-input p3-title" value="${escapeHtml(chunk.chunkTitle)}"><label class="gui-label">Reading Text</label><textarea class="gui-textarea p3-text">${escapeHtml(chunk.chunkText)}</textarea><h4 style="margin:24px 0 12px 0; color:var(--text-secondary); font-size:0.95rem;">Comprehension Questions</h4>${qHtml}<button class="btn-outline" style="margin-top:16px;" onclick="actionP3Q('add', ${cIdx})">+ Add Question to Chunk</button></div>`; }); }
+    function renderP4() { const c = document.getElementById('gui-p4-list'); c.innerHTML = ""; editState.p4.forEach((q, qIdx) => { let distractors = q.options.filter((o, idx) => idx !== q.a); c.innerHTML += `<div class="gui-card p4-row"><button class="gui-card-delete" onclick="actionP4('del', ${qIdx})">Delete Q</button><label class="gui-label" style="color:var(--primary);">Target Concept (For Analytics Mapping)</label><input class="gui-input p4-concept" value="${escapeHtml(q.concept)}"><label class="gui-label">Question</label><input class="gui-input p4-q-text" value="${escapeHtml(q.q)}"><label class="gui-label" style="color:var(--success);">Correct Answer</label><input class="gui-input p4-q-c" style="border-color:var(--success); border-width:2px;" value="${escapeHtml(q.options[q.a])}"><label class="gui-label">Distractors (Incorrect Options)</label><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;"><input class="gui-input p4-q-d1" placeholder="Distractor 1" value="${escapeHtml(distractors[0])}"><input class="gui-input p4-q-d2" placeholder="Distractor 2" value="${escapeHtml(distractors[1])}"><input class="gui-input p4-q-d3" placeholder="Distractor 3" value="${escapeHtml(distractors[2])}"></div></div>`; }); }
+
+    function actionP2(act, idx) { harvestGUI(); if(act==='add') editState.p2.push({t:"", d:""}); else editState.p2.splice(idx,1); renderP2(); }
+    function actionP3(act, idx) { harvestGUI(); if(act==='add') editState.p3.push({chunkTitle:"", chunkText:"", questions:[]}); else editState.p3.splice(idx,1); renderP3(); }
+    function actionP3Q(act, cIdx, qIdx) { harvestGUI(); if(act==='add') editState.p3[cIdx].questions.push({q:"", options:[""], a:0}); else editState.p3[cIdx].questions.splice(qIdx,1); renderP3(); }
+    function actionP4(act, idx) { harvestGUI(); if(act==='add') editState.p4.push({q:"", concept:"", options:[""], a:0}); else editState.p4.splice(idx,1); renderP4(); }
+
+    function saveModule() {
+      harvestGUI(); 
+      const sel = document.getElementById('editor-module-select').value; const newName = document.getElementById('editor-new-name').value.trim();
+      let targetModule = sel;
+      if (sel === '__NEW__') { if (!newName) return alert("You must provide a name for the new module."); targetModule = newName; }
+
+      const saveBtn = document.getElementById('editor-save-btn'); saveBtn.innerText = "Saving..."; saveBtn.disabled = true;
+      const finalJSONString = JSON.stringify(editState);
+
+      google.script.run
+        .withSuccessHandler(() => {
+          saveBtn.innerText = "💾 Save Module"; saveBtn.disabled = false;
+          alert(`Successfully saved module: ${targetModule}`);
+          document.getElementById('editor-new-name').value = ""; renderEditorTab(); 
+        })
+        .withFailureHandler(err => {
+          saveBtn.innerText = "💾 Save Module"; saveBtn.disabled = false;
+          alert("Error saving: " + err.message);
+        })
+        .saveModuleData(currentSelectedCourse, targetModule, finalJSONString);
+    }
+  </script>
+</body>
+</html>
